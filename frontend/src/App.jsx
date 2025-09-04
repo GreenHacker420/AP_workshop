@@ -212,8 +212,6 @@ function App() {
                       </td>
                     </>
                   )}
-// Delete contact (must be above the return statement, outside JSX)
-// Place this with the other helpers above the return statement
                 </tr>
               ))
             ) : (
