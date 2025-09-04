@@ -1,3 +1,5 @@
+import db from './db.js'; 
+
 export async function getContacts (req, res){
   try {
     const id = req.params.id;
@@ -53,4 +55,34 @@ export async function postContacts(req,res){
         res.status(500).json({ error: 'Internal server error' });
     }
 
+}
+
+export async function putContacts(req,res){
+    try{
+      const id = req.params.id;
+      const { name, email, phone } = req.body;
+      const [result] = await db.query('UPDATE contacts SET name = ?, email = ?, phone = ? WHERE id = ?', [name, email, phone, id]);
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+      res.json({ id, name, email, phone });
+    }
+    catch(e){
+      console.log('error updating contact:', e);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+export async function deleteContacts(req, res) {
+  try {
+    const id = req.params.id;
+    const [result] = await db.query('DELETE FROM contacts WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error deleting contact:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }

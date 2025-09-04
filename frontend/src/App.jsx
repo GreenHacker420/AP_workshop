@@ -1,3 +1,20 @@
+  // Delete contact
+  async function handleDelete(id) {
+    if (!window.confirm('Are you sure you want to delete this contact?')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`http://localhost:5555/contacts/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete contact');
+      fetchContacts();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 import { useState, useEffect } from 'react'
 import './app.css'
 
@@ -6,6 +23,12 @@ function App() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+
+  // Edit state
+  const [editId, setEditId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editPhone, setEditPhone] = useState('')
 
   // Filter and sort states
   const [filterName, setFilterName] = useState('')
@@ -76,6 +99,25 @@ function App() {
     }
   }
 
+  // Delete contact
+  async function handleDelete(id) {
+    if (!window.confirm('Are you sure you want to delete this contact?')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`http://localhost:5555/contacts/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete contact');
+      fetchContacts();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Start of return
   return (
     <div style={{ padding: '1em' }}>
       <h1>Contacts</h1>
@@ -106,7 +148,7 @@ function App() {
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: 'red' }}>Error: {error}</p>}
 
-      {/* Contacts Table */}
+      {/* Contacts Table with Edit functionality */}
       {!loading && !error && (
         <table border="1" cellPadding="6" style={{ borderCollapse: 'collapse', width: '100%' }}>
           <thead>
@@ -124,20 +166,59 @@ function App() {
                 </button>
               </th>
               <th>Phone</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {contacts.length > 0 ? (
               contacts.map((contact, idx) => (
                 <tr key={contact.id || idx}>
-                  <td>{contact.name}</td>
-                  <td>{contact.email}</td>
-                  <td>{contact.phone}</td>
+                  {editId === contact.id ? (
+                    <>
+                      <td>
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="email"
+                          value={editEmail}
+                          onChange={e => setEditEmail(e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="tel"
+                          value={editPhone}
+                          onChange={e => setEditPhone(e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <button onClick={() => handleUpdate(contact.id)}>Save</button>
+                        <button onClick={cancelEdit}>Cancel</button>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td>{contact.name}</td>
+                      <td>{contact.email}</td>
+                      <td>{contact.phone}</td>
+                      <td>
+                        <button onClick={() => startEdit(contact)}>Edit</button>
+                        <button onClick={() => handleDelete(contact.id)} style={{marginLeft: '0.5em', color: 'red'}}>Delete</button>
+                      </td>
+                    </>
+                  )}
+// Delete contact (must be above the return statement, outside JSX)
+// Place this with the other helpers above the return statement
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="3" style={{ textAlign: 'center' }}>
+                <td colSpan="4" style={{ textAlign: 'center' }}>
                   No contacts found
                 </td>
               </tr>
@@ -174,6 +255,43 @@ function App() {
       </form>
     </div>
   )
+
+  // End of return
+  // Edit helpers
+  function startEdit(contact) {
+    setEditId(contact.id)
+    setEditName(contact.name)
+    setEditEmail(contact.email)
+    setEditPhone(contact.phone)
+    setError(null)
+  }
+
+  function cancelEdit() {
+    setEditId(null)
+    setEditName('')
+    setEditEmail('')
+    setEditPhone('')
+    setError(null)
+  }
+
+  async function handleUpdate(id) {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`http://localhost:5555/contacts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName, email: editEmail, phone: editPhone })
+      })
+      if (!res.ok) throw new Error('Failed to update contact')
+      cancelEdit()
+      fetchContacts()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 }
 
 export default App
